@@ -1,22 +1,18 @@
 package main
-import  (
+
+import (
 	"fmt"
 	"log"
-	"os"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 	// "github.com/jackc/pgx/v5"
-	// "github.com/gorilla/mux"
+	"github.com/alibaba0010/postgres-api/logger"
+	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 )
 
-func httpHandler(writer http.ResponseWriter, request *http.Request){
-	if request.URL.Path != "/" {
-		http.NotFound(writer, request)
-		return
-	}
-	fmt.Fprintf(writer, "Hello World, Welcome to Go, The requested URL path is %s",request.URL.Path)
-}
 
 func main(){
 	err := godotenv.Load()
@@ -28,11 +24,21 @@ func main(){
 		port ="3001"
 		fmt.Println("Add port to env file")
 	}
-	http.HandleFunc("/getUser", getUserHandler)
-	http.HandleFunc("/getBook", GetBookHandler)
-	http.HandleFunc("/", httpHandler)
-	fmt.Println("Server running at localhost ", port)
-	if  err:= http.ListenAndServe(":"+port, nil); err != nil {
+	logger.InitLogger()
+	// defer sync to flush logs on program exit
+	defer logger.Sync()
+	route := mux.NewRouter()
+	route.Use(logger.Logger)
+	route.HandleFunc("/getUser", getUserHandler).Methods("GET")
+	route.HandleFunc("/getBook", GetBookHandler).Methods("GET")
+	route.HandleFunc("/", httpHandler).Methods("GET")
+	logger.Log.Info("\n🚀 Server starting", zap.String("address", ":"+port))
+	if  err:= http.ListenAndServe(":"+port, route); err != nil {
 		log.Fatal(err)
 	}
 }
+
+// http.HandleFunc("/getUser", getUserHandler)
+// 	http.HandleFunc("/getBook", GetBookHandler)
+// 	http.HandleFunc("/", httpHandler)
+// if  err:= http.ListenAndServe(":"+port, nil); err != nil {

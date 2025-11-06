@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"fmt"
 )
 
 type User struct {
@@ -41,3 +42,10 @@ func GetBookHandler(writer http.ResponseWriter, request *http.Request){
 }
 
 
+func httpHandler(writer http.ResponseWriter, request *http.Request){
+	if request.URL.Path != "/" {
+		http.NotFound(writer, request)
+		return
+	}
+	fmt.Fprintf(writer, "Hello World, Welcome to Go, The requested URL path is %s",request.URL.Path)
+}
