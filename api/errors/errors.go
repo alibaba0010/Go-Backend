@@ -46,13 +46,13 @@ func ErrorResponse(writer http.ResponseWriter, request *http.Request, appErr *Ap
 
     writer.Header().Set("Content-Type", "application/json")
     writer.WriteHeader(appErr.Status)
-
+requestPath := request.URL.Path
     // Log minimal info only. Do NOT print internal error details or stack traces to console.
     // For client-side/non-critical errors (4xx) log as Info; for server errors (5xx) log as Error
     if appErr.Status >= 500 {
-        logger.Log.Error(appErr.Title, zap.Int("status", appErr.Status))
+        logger.Log.Error(appErr.Title, zap.Int("status", appErr.Status), zap.String("path", requestPath),)
     } else {
-        logger.Log.Error(appErr.Title, zap.Int("status", appErr.Status))
+        logger.Log.Error(appErr.Title, zap.Int("status", appErr.Status), zap.String("path", requestPath),)
     }
 
     // Respond to client (only public info)
