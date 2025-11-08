@@ -4,11 +4,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/alibaba0010/postgres-api/api/config"
-	"github.com/alibaba0010/postgres-api/api/database"
+	"github.com/alibaba0010/postgres-api/internal/config"
+	"github.com/alibaba0010/postgres-api/internal/database"
 	_ "github.com/alibaba0010/postgres-api/docs" // swag doc
 	"github.com/alibaba0010/postgres-api/logger"
-	"github.com/alibaba0010/postgres-api/api/routes"
+	"github.com/alibaba0010/postgres-api/internal/routes"
 	"go.uber.org/zap"
 )
 

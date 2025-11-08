@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/alibaba0010/postgres-api/logger"
-	"github.com/alibaba0010/postgres-api/api/config"
+	"github.com/alibaba0010/postgres-api/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )

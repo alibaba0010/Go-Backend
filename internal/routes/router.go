@@ -2,7 +2,7 @@ package routes
 import (
 	"net/http"
 	"github.com/gorilla/mux"
-	"github.com/alibaba0010/postgres-api/api/errors"
+	"github.com/alibaba0010/postgres-api/internal/errors"
 	"github.com/alibaba0010/postgres-api/logger"
 	httpSwagger "github.com/swaggo/http-swagger"
 
