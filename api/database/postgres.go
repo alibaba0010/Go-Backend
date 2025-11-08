@@ -3,20 +3,21 @@ package database
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/alibaba0010/postgres-api/logger"
+	"github.com/alibaba0010/postgres-api/api/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 var Pool *pgxpool.Pool
 func ConnectDB(){
-	host:= os.Getenv("DB_HOST")
-	port:= os.Getenv("DB_PORT")
-	user:= os.Getenv("DB_USERNAME")
-	password:= os.Getenv("DB_PASSWORD")
-	dbname:= os.Getenv("DB_NAME")
+	cfg:= config.LoadConfig()
+	host:= cfg.DB_HOST
+	port:= cfg.DB_PORT
+	user:= cfg.DB_USERNAME
+	password:= cfg.DB_PASSWORD
+	dbname:= cfg.DB_NAME
 
 	connectionURL:= fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, password, host, port, dbname)
 	context, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
