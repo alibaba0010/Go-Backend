@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
 	"fmt"
+	"net/http"
 )
 
 type User struct {
@@ -48,4 +48,17 @@ func httpHandler(writer http.ResponseWriter, request *http.Request){
 		return
 	}
 	fmt.Fprintf(writer, "Hello World, Welcome to Go, The requested URL path is %s",request.URL.Path)
+}
+
+// HealthCheckHandler returns a simple health status for the API
+func HealthCheckHandler(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json")
+	resp := map[string]string{
+		"title":   "Success",
+		"message": "API is healthy and running",
+	}
+	if err := json.NewEncoder(writer).Encode(resp); err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

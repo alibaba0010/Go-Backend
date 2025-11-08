@@ -9,7 +9,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 host: localhost:3000
-basePath: /
+basePath: /api/v1
 schemes:
   - http
 consumes:
@@ -27,6 +27,29 @@ securityDefinitions:
 
 # All paths/endpoints
 paths:
+  /healthcheck:
+    get:
+      tags:
+        - system
+      summary: API Health Check
+      description: Returns the health status of the API
+      operationId: healthCheck
+      responses:
+        200:
+          description: API is healthy
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Success"
+              message:
+                type: string
+                example: "API is healthy and running"
+            required:
+              - title
+              - message
+
   /users:
     get:
       tags:
@@ -40,9 +63,18 @@ paths:
         200:
           description: Successful operation
           schema:
-            type: array
-            items:
-              $ref: "#/definitions/User"
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Success"
+              data:
+                type: array
+                items:
+                  $ref: "#/definitions/User"
+            required:
+              - title
+              - data
         401:
           description: Unauthorized
           schema:
@@ -69,7 +101,16 @@ paths:
         201:
           description: User created successfully
           schema:
-            $ref: "#/definitions/User"
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Success"
+              data:
+                $ref: "#/definitions/User"
+            required:
+              - title
+              - data
         400:
           description: Invalid input
           schema:
@@ -96,7 +137,16 @@ paths:
         200:
           description: Successful operation
           schema:
-            $ref: "#/definitions/User"
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Success"
+              data:
+                $ref: "#/definitions/User"
+            required:
+              - title
+              - data
         404:
           description: User not found
           schema:
@@ -117,9 +167,18 @@ paths:
         200:
           description: Successful operation
           schema:
-            type: array
-            items:
-              $ref: "#/definitions/Restaurant"
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Success"
+              data:
+                type: array
+                items:
+                  $ref: "#/definitions/Restaurant"
+            required:
+              - title
+              - data
         500:
           description: Internal server error
           schema:
@@ -144,7 +203,16 @@ paths:
         201:
           description: Restaurant created successfully
           schema:
-            $ref: "#/definitions/Restaurant"
+            type: object
+            properties:
+              title:
+                type: string
+                example: "Success"
+              data:
+                $ref: "#/definitions/Restaurant"
+            required:
+              - title
+              - data
         400:
           description: Invalid input
           schema:

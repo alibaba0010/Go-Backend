@@ -13,16 +13,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+
 	// "path/filepath"
 
 	"github.com/alibaba0010/postgres-api/api/database"
 	"github.com/alibaba0010/postgres-api/api/errors"
+	_ "github.com/alibaba0010/postgres-api/docs" // swag doc
 	"github.com/alibaba0010/postgres-api/logger"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
-	_ "github.com/alibaba0010/postgres-api/docs" // swag doc
 )
 
 
@@ -48,23 +49,17 @@ func main(){
 	// Add recovery middleware early so panics are caught and do not print stack traces.
 	route.Use(errors.RecoverMiddleware)
 	route.Use(logger.Logger)
-
+	
 	// Serve Swagger UI at /swagger/
 	route.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	// API routes
 	// API routes
 	route.HandleFunc("/getUser", getUserHandler).Methods("GET")
 	route.HandleFunc("/getBook", GetBookHandler).Methods("GET")
 	route.HandleFunc("/", httpHandler).Methods("GET")
 
-	// // Swagger UI routes
-	// route.PathPrefix("/swagger/*").Handler(httpSwagger.Handler(
-	// 	httpSwagger.URL("http://localhost:3000/swagger/doc.json"), // The url pointing to API definition
-	// 	httpSwagger.DeepLinking(true),
-	// 	httpSwagger.DocExpansion("list"),
-	// 	httpSwagger.DomID("swagger-ui"), // Removed the # prefix
-	// ))
-
-
+	// Healthcheck
+	route.HandleFunc("/api/v1/healthcheck", HealthCheckHandler).Methods("GET")
 
 	route.NotFoundHandler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		errors.ErrorResponse(writer, request, errors.RouteNotExist())
