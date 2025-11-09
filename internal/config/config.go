@@ -2,7 +2,7 @@ package config
 import (
 	"os"
 	"github.com/joho/godotenv"
-	"github.com/alibaba0010/postgres-api/logger"
+	"github.com/alibaba0010/postgres-api/internal/logger"
 	"go.uber.org/zap"
 
 )

@@ -7,7 +7,7 @@ import (
 	"github.com/alibaba0010/postgres-api/internal/config"
 	"github.com/alibaba0010/postgres-api/internal/database"
 	_ "github.com/alibaba0010/postgres-api/docs" // swag doc
-	"github.com/alibaba0010/postgres-api/logger"
+	"github.com/alibaba0010/postgres-api/internal/logger"
 	"github.com/alibaba0010/postgres-api/internal/routes"
 	"go.uber.org/zap"
 )

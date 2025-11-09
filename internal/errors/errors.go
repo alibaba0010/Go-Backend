@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/alibaba0010/postgres-api/logger"
+	"github.com/alibaba0010/postgres-api/internal/logger"
 	"go.uber.org/zap"
 )
 

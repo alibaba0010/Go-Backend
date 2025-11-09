@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/alibaba0010/postgres-api/logger"
+	"github.com/alibaba0010/postgres-api/internal/logger"
 	"github.com/jackc/pgconn"
 )
 

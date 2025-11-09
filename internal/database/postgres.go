@@ -2,42 +2,59 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/alibaba0010/postgres-api/logger"
 	"github.com/alibaba0010/postgres-api/internal/config"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/alibaba0010/postgres-api/internal/logger"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/extra/bundebug"
 	"go.uber.org/zap"
 )
-var Pool *pgxpool.Pool
-func ConnectDB(){
-	cfg:= config.LoadConfig()
-	host:= cfg.DB_HOST
-	port:= cfg.DB_PORT
-	user:= cfg.DB_USERNAME
-	password:= cfg.DB_PASSWORD
-	dbname:= cfg.DB_NAME
 
-	connectionURL:= fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, password, host, port, dbname)
-	context, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
-	defer cancel()
-	var err error
-	Pool, err = pgxpool.New(context, connectionURL)
+var (
+	Pool *sql.DB
+	DB   *bun.DB
+)
+
+func ConnectDB() *bun.DB {
+	cfg := config.LoadConfig()
+	connectionURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", 
+		cfg.DB_USERNAME, cfg.DB_PASSWORD, cfg.DB_HOST, cfg.DB_PORT, cfg.DB_NAME)
+
+	config, err := pgx.ParseConfig(connectionURL)
 	if err != nil {
-		logger.Log.Fatal("Unable to connect to database", zap.Error(err))
+		logger.Log.Fatal("Unable to parse database config", zap.Error(err))
 	}
-	// db := bun.NewDB(Pool, pgdialect.New())
 
-	
-		// Test connection
-	err = Pool.Ping(context)
-	if err != nil {
+	Pool = stdlib.OpenDB(*config)
+	Pool.SetMaxIdleConns(25)
+	Pool.SetMaxOpenConns(25)
+	Pool.SetConnMaxLifetime(5 * time.Minute)
+
+	// Create a Bun db instance
+	DB = bun.NewDB(Pool, pgdialect.New())
+
+	// Add query debug hook in development
+	DB.AddQueryHook(bundebug.NewQueryHook(
+		bundebug.WithVerbose(true),
+		bundebug.FromEnv(),
+	))
+
+	// Test connection
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := DB.PingContext(ctx); err != nil {
 		logger.Log.Fatal("Database ping failed", zap.Error(err))
 	}
 
 	logger.Log.Info("✅ Connected to PostgreSQL database")
-
+	return DB
 }
 
 // Close connection when shutting down

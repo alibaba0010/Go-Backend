@@ -3,7 +3,7 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"github.com/alibaba0010/postgres-api/internal/errors"
-	"github.com/alibaba0010/postgres-api/logger"
+	"github.com/alibaba0010/postgres-api/internal/logger"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 
