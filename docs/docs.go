@@ -3,7 +3,7 @@ package docs
 
 import "github.com/swaggo/swag"
 
-
+// Build the complete Swagger documentation by combining all parts
 const docTemplate = `{
   "swagger": "2.0",
   "info": {
@@ -11,7 +11,7 @@ const docTemplate = `{
     "description": "A Restaurant Management API built using Go",
     "version": "1.0.0",
     "contact": {
-      "email": "your.email@example.com"
+      "email": "yzakariyahali100@gmail.com"
     },
     "license": {
       "name": "Apache 2.0",
@@ -37,40 +37,123 @@ const docTemplate = `{
 			"description": "Enter the token with the Bearer prefix, e.g. 'Bearer abcde12345'"
 		}
 	},
-		"paths": {
-			"/healthcheck": {
-				"get": {
-					"tags": [
-						"system"
-					],
-					"summary": "API Health Check",
-					"description": "Returns the health status of the API",
-					"operationId": "healthCheck",
-					"responses": {
-						"200": {
-							"description": "API is healthy",
-							"schema": {
-								"type": "object",
-								"properties": {
-									"title": {
-										"type": "string",
-										"example": "Success"
-									},
-									"message": {
-										"type": "string",
-										"example": "API is healthy and running"
-									}
+	"paths": {
+		"/healthcheck": {
+			"get": {
+				"tags": [
+					"system"
+				],
+				"summary": "API Health Check",
+				"description": "Returns the health status of the API",
+				"operationId": "healthCheck",
+				"responses": {
+					"200": {
+						"description": "API is healthy",
+						"schema": {
+							"type": "object",
+							"properties": {
+								"title": {
+									"type": "string",
+									"example": "Success"
 								},
-								"required": [
-									"title",
-									"message"
-								]
-							}
+								"message": {
+									"type": "string",
+									"example": "API is healthy and running"
+								}
+							},
+							"required": [
+								"title",
+								"message"
+							]
 						}
 					}
 				}
-			},
-			"/users": {
+			}
+		},
+		"/auth/signup": {
+			"post": {
+				"tags": [
+					"Auth"
+				],
+				"summary": "User Signup",
+				"description": "Creates a new user account",
+				"operationId": "signup",
+				"parameters": [
+					{
+						"in": "body",
+						"name": "body",
+						"description": "Signup request",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/SignupInput"
+						}
+					}
+				],
+				"responses": {
+					"201": {
+						"description": "User created successfully",
+						"schema": {
+							"type": "object",
+							"properties": {
+								"title": {
+									"type": "string",
+									"example": "Success"
+								},
+								"message": {
+									"type": "string",
+									"example": "User created successfully"
+								},
+								"user": {
+									"type": "object",
+									"properties": {
+										"id": {
+											"type": "string",
+											"format": "uuid"
+										},
+										"name": {
+											"type": "string"
+										},
+										"email": {
+											"type": "string",
+											"format": "email"
+										}
+									},
+									"required": [
+										"id",
+										"name",
+										"email"
+									]
+								}
+							},
+							"required": [
+								"title",
+								"message",
+								"user"
+							]
+						}
+					},
+					"400": {
+						"description": "Validation error",
+						"schema": {
+							"$ref": "#/definitions/Error"
+						}
+					},
+					"409": {
+						"description": "Duplicate email",
+						"schema": {
+							"$ref": "#/definitions/Error"
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"schema": {
+							"$ref": "#/definitions/Error"
+						}
+					}
+				}
+			}
+		},
+		"/users": {
 			"get": {
 				"tags": [
 					"Users"
@@ -86,56 +169,17 @@ const docTemplate = `{
 				"responses": {
 					"200": {
 						"description": "Successful operation",
-										"schema": {
-											"type": "object",
-											"properties": {
-												"title": { "type": "string", "example": "Success" },
-												"data": { "type": "array", "items": { "$ref": "#/definitions/User" } }
-											},
-											"required": ["title","data"]
-										}
+						"schema": {
+							"type": "object",
+							"properties": {
+								"title": { "type": "string", "example": "Success" },
+								"data": { "type": "array", "items": { "$ref": "#/definitions/User" } }
+							},
+							"required": ["title","data"]
+						}
 					},
 					"401": {
 						"description": "Unauthorized",
-						"schema": {
-							"$ref": "#/definitions/Error"
-						}
-					},
-					"500": {
-						"description": "Internal server error",
-						"schema": {
-							"$ref": "#/definitions/Error"
-						}
-					}
-				}
-			},
-			"post": {
-				"tags": [
-					"Users"
-				],
-				"summary": "Create a new user",
-				"description": "Creates a new user in the system",
-				"operationId": "createUser",
-				"parameters": [
-					{
-						"in": "body",
-						"name": "user",
-						"description": "User object that needs to be created",
-						"required": true,
-						"schema": {
-							"$ref": "#/definitions/UserInput"
-						}
-					}
-				],
-				"responses": {
-					"201": {
-						"description": "User created successfully",
-						"schema": {
-							"$ref": "#/definitions/User"
-						}
-					},
-					"400": {
-						"description": "Invalid input",
 						"schema": {
 							"$ref": "#/definitions/Error"
 						}
@@ -320,6 +364,36 @@ const docTemplate = `{
 				"password"
 			]
 		},
+		"SignupInput": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"type": "string",
+					"minLength": 3,
+					"maxLength": 50
+				},
+				"email": {
+					"type": "string",
+					"format": "email"
+				},
+				"password": {
+					"type": "string",
+					"format": "password",
+					"minLength": 6
+				},
+				"confirmPassword": {
+					"type": "string",
+					"format": "password",
+					"minLength": 6
+				}
+			},
+			"required": [
+				"name",
+				"email",
+				"password",
+				"confirmPassword"
+			]
+		},
 		"Restaurant": {
 			"type": "object",
 			"properties": {
@@ -404,16 +478,20 @@ const docTemplate = `{
 	},
 	"tags": [
 		{
+			"name": "system",
+			"description": "System operations"
+		},
+		{
+			"name": "Auth",
+			"description": "Authentication operations"
+		},
+		{
 			"name": "Users",
 			"description": "Operations about users"
 		},
 		{
 			"name": "Restaurants",
 			"description": "Operations about restaurants"
-		},
-		{
-			"name": "Auth",
-			"description": "Authentication operations"
 		}
 	]
 }`

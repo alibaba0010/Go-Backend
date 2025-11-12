@@ -1,31 +1,32 @@
 package routes
-import (
-	"net/http"
-	"encoding/json"
 
-	"github.com/gorilla/mux"
+import (
+	"encoding/json"
+	"net/http"
+
 	"github.com/alibaba0010/postgres-api/internal/errors"
 	"github.com/alibaba0010/postgres-api/internal/logger"
+	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
-
-
-
 )
 
 func ApiRouter() *mux.Router {
-	route:= mux.NewRouter()
-	// user := route.PathPrefix("/api/v1").Subrouter()
-		// Add recovery middleware early so panics are caught and do not print stack traces.	
+	route := mux.NewRouter()
+	// Add recovery middleware early so panics are caught and do not print stack traces.	
 	route.Use(errors.RecoverMiddleware)
 	route.Use(logger.Logger)
 	
 	// Serve Swagger UI at /swagger/
 	route.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
-	route.HandleFunc("/api/v1/healthcheck", HealthCheckHandler).Methods("GET")
+	
+	// Create v1 subrouter with /api/v1 prefix
+	v1 := route.PathPrefix("/api/v1").Subrouter()
+	v1.HandleFunc("/healthcheck", HealthCheckHandler).Methods("GET")
+	
+	// Register auth routes under /api/v1/auth
+	authRouter := AuthRoutes()
+	v1.PathPrefix("/auth").Handler(http.StripPrefix("/api/v1/auth", authRouter))
 
-	// route.HandleFunc("/getUser", getUserHandler).Methods("GET")
-	// route.HandleFunc("/getBook", GetBookHandler).Methods("GET")
-	// route.HandleFunc("/", httpHandler).Methods("GET")
 	route.NotFoundHandler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		errors.ErrorResponse(writer, request, errors.RouteNotExist())
 	})
