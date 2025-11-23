@@ -7,13 +7,12 @@ import (
 	"github.com/wneessen/go-mail"
 	"go.uber.org/zap"
 
-
 	"github.com/alibaba0010/postgres-api/internal/config"
 	"github.com/alibaba0010/postgres-api/internal/logger"
 )
 
 // SendHTMLEmail sends an HTML email to the specified recipient using SMTP
-func SendHTMLEmail(to, subject, htmlBody string) error {
+func SendEmail(to, subject, htmlBody string) error {
 	cfg := config.LoadConfig()
 
 	host := cfg.EMAIL_HOST
@@ -23,9 +22,10 @@ func SendHTMLEmail(to, subject, htmlBody string) error {
 	password := cfg.EMAIL_PASSWORD
 
 	// default port if not provided
-	port, err := strconv.Atoi(cfg.EMAIL_PASSWORD)
+	port, err := strconv.Atoi(cfg.EMAIL_PORT)
 	if err != nil {
-		logger.Log.Fatal("Invalid EMAIL_PORT, using default 587", zap.Error(err))
+		// don't fatally exit on misconfigured port; fall back to 587
+		logger.Log.Error("Invalid EMAIL_PORT, using default 587", zap.Error(err))
 		port = 587
 	}
 	if portStr != "" {
@@ -62,7 +62,7 @@ func SendHTMLEmail(to, subject, htmlBody string) error {
 
 // BuildWelcomeHTML returns a simple welcome HTML body. You can expand this
 // to include verification links, tokens, etc.
-func BuildWelcomeHTML(name, verifyURL string) string {
+func VerifyMail(name, verifyURL string) string {
 	return fmt.Sprintf(`
 	<html>
 	<body style="background:#f9f9f9; padding:20px; font-family:Arial;">

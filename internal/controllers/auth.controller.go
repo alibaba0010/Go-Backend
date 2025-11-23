@@ -31,26 +31,45 @@ func SignupHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	user, appErr := services.RegisterUser(request.Context(), input)
+	_, appErr := services.RegisterUser(request.Context(), input)
 	if appErr != nil {
 		errors.ErrorResponse(writer, request, appErr)
 		return
 	}
 
-	// Return success response (without password) using DTO types
-	resp := dto.SignUpResponse{
-		Title: "User created successfully",
-		Data: dto.SignUpData{
-			ID:    user.ID,
-			Name:  user.Name,
-			Email: user.Email,
-		},
+	// Per new flow we don't persist the user at signup; activation will.
+	resp := map[string]string{
+		"title":   "Successfully signed up",
+		"message": "Please check your email for a verification link",
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(writer).Encode(resp)
 }
-func VerifyEmailHandler(writer http.ResponseWriter, request *http.Request) {
-	// Implementation for email verification goes here
+func ActivateUserHandler(writer http.ResponseWriter, request *http.Request) {
+	token := request.URL.Query().Get("token")
+	if token == "" {
+		errors.ErrorResponse(writer, request, errors.ValidationError("token is required"))
+		return
+	}
+
+	user, appErr := services.ActivateUser(request.Context(), token)
+	if appErr != nil {
+		errors.ErrorResponse(writer, request, appErr)
+		return
+	}
+
+	// Return created user (omit password)
+	resp := dto.SignUpResponse{
+		Title: "User activated successfully",
+		Data: dto.SignUpData{
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
+		},
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(writer).Encode(resp)
 }
