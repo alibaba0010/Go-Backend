@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	_ "github.com/alibaba0010/postgres-api/docs" // swag doc
 	"github.com/alibaba0010/postgres-api/internal/config"
 	"github.com/alibaba0010/postgres-api/internal/database"
-	_ "github.com/alibaba0010/postgres-api/docs" // swag doc
 	"github.com/alibaba0010/postgres-api/internal/logger"
 	"github.com/alibaba0010/postgres-api/internal/routes"
 	"go.uber.org/zap"
@@ -21,11 +21,15 @@ func main(){
 
 	database.ConnectDB()
 	defer database.CloseDB()
+
+	database.ConnectRedis()
+	defer database.CloseRedis()
+
 	port := config.LoadConfig().Port
 	route := routes.ApiRouter()
 
 	
-	logger.Log.Info("🚀 Server starting", zap.String("address", ":"+port))
+	logger.Log.Info("🚀 Server starting", zap.String("url", "http://localhost:"+port+"/swagger/index.html"))
 	if  err:= http.ListenAndServe(":"+port, route); err != nil {
 		log.Fatal(err)
 	}
