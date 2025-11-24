@@ -30,13 +30,12 @@ func SignupHandler(writer http.ResponseWriter, request *http.Request) {
 		errors.ErrorResponse(writer, request, errors.ValidationError("Invalid JSON body"))
 		return
 	}
-
+	
 	_, appErr := services.RegisterUser(request.Context(), input)
 	if appErr != nil {
 		errors.ErrorResponse(writer, request, appErr)
 		return
 	}
-
 	// Per new flow we don't persist the user at signup; activation will.
 	resp := map[string]string{
 		"title":   "Successfully signed up",

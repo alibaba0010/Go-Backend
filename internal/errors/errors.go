@@ -10,14 +10,16 @@ import (
 
 // ErrorResponse defines what gets sent to the client
 type ErrorResponseStruct struct {
-    Title   string `json:"title"`
-    Message string `json:"message"`
+    Title    string   `json:"title"`
+    Message  string   `json:"message,omitempty"`
+    Messages []string `json:"messages,omitempty"`
 }
 
 // AppError wraps any error with a title and HTTP status
 type AppError struct {
     Title     string
     Message   string
+    Messages  []string
     Status    int
     Err       error
 }
@@ -57,10 +59,14 @@ requestPath := request.URL.Path
 
     // Respond to client (only public info)
     // If JSON encoding fails, don't attempt to write another body (avoids recursive logging)
-    _ = json.NewEncoder(writer).Encode(ErrorResponseStruct{
+    resp := ErrorResponseStruct{
         Title:   appErr.Title,
         Message: appErr.Message,
-    })
+    }
+    if len(appErr.Messages) > 0 {
+        resp.Messages = appErr.Messages
+    }
+    _ = json.NewEncoder(writer).Encode(resp)
 }
 // func (e *AppError) Error() string {
 //     if e == nil {

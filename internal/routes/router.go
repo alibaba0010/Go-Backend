@@ -23,9 +23,9 @@ func ApiRouter() *mux.Router {
 	v1 := route.PathPrefix("/api/v1").Subrouter()
 	v1.HandleFunc("/healthcheck", HealthCheckHandler).Methods("GET")
 	
-	// Register auth routes under /api/v1/auth
-	authRouter := AuthRoutes()
-	v1.PathPrefix("/auth").Handler(http.StripPrefix("/api/v1/auth", authRouter))
+	
+	auth := v1.PathPrefix("/auth").Subrouter()
+	AuthRoutes(auth)
 
 	route.NotFoundHandler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		errors.ErrorResponse(writer, request, errors.RouteNotExist())

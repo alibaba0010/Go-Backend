@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	// "runtime/debug"
 	"strings"
 
 	"go.uber.org/zap"
@@ -80,8 +81,15 @@ func RecoverMiddleware(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         defer func() {
             if rec := recover(); rec != nil {
-                // Log minimal panic info (do not print the panic value or stack)
-                logger.Log.Error("panic recovered in request", zap.String("path", r.URL.Path))
+                // Log recovered panic value and stack trace to help debugging in development.
+                // This intentionally logs more detail than the public response. If you
+                // are running in production and want to avoid logging stack traces,
+                // remove the stack logging below.
+                logger.Log.Error("panic recovered in request",
+                    zap.String("path", r.URL.Path),
+                    // zap.Any("panic", rec),
+                    // zap.String("stack", string(debug.Stack())),
+                )
                 // send generic 500 response without exposing internal details
                 ErrorResponse(w, r, InternalError(fmt.Errorf("panic")))
             }

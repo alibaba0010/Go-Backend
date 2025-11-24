@@ -6,11 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	redisPkg "github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/argon2"
 
 	"github.com/alibaba0010/postgres-api/internal/config"
@@ -20,7 +20,6 @@ import (
 	"github.com/alibaba0010/postgres-api/internal/logger"
 	"github.com/alibaba0010/postgres-api/internal/models"
 	"github.com/alibaba0010/postgres-api/internal/utils"
-	"go.uber.org/zap"
 )
 
 // RegisterUser handles the DB work for signing up a new user.
@@ -30,30 +29,41 @@ func RegisterUser(ctx context.Context, input dto.SignupInput) (*models.User, *er
 	// Validate input using same validation rules as controllers previously used
 	validate := validator.New()
 	dto.RegisterValidators(validate)
+
+	// Run validation and convert errors to friendly messages
 	if err := validate.Struct(input); err != nil {
-		var messages []string
-		for _, e := range err.(validator.ValidationErrors) {
-			var msg string
-			switch e.Tag() {
-			case "required":
-				msg = e.Field() + " is required"
-			case "min":
-				msg = e.Field() + " must be at least " + e.Param() + " characters"
-			case "max":
-				msg = e.Field() + " must be at most " + e.Param() + " characters"
-			case "email":
-				msg = e.Field() + " must be a valid email address"
-			case "password_special":
-				msg = e.Field() + " must contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
-			case "eqfield":
-				msg = e.Field() + " must match " + e.Param()
-			default:
-				msg = e.Field() + " failed validation: " + e.Tag()
+		if ves, ok := err.(validator.ValidationErrors); ok {
+			logger.Log.Info("validation errors during registration", zap.Error(err))
+			var messages []string
+			for _, fe := range ves {
+				var msg string
+				field := fe.Field()
+				switch fe.Tag() {
+				case "required":
+					msg = fmt.Sprintf("%s is required", field)
+				case "min":
+					msg = fmt.Sprintf("%s must be at least %s characters", field, fe.Param())
+				case "max":
+					msg = fmt.Sprintf("%s must be at most %s characters", field, fe.Param())
+				case "email":
+					msg = fmt.Sprintf("%s must be a valid email address", field)
+				case "password_special":
+					msg = "password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
+				case "eqfield":
+					// fe.Param() holds the field the current field must equal (e.g., Password)
+					msg = fmt.Sprintf("%s must match %s", field, fe.Param())
+				default:
+					msg = fmt.Sprintf("%s is invalid", field)
+				}
+				messages = append(messages, msg)
 			}
-			messages = append(messages, msg)
+			return nil, errors.ValidationErrors(messages)
 		}
-		return nil, errors.ValidationError(strings.Join(messages, "; "))
+		// Non-validation error
+		return nil, errors.ValidationError(err.Error())
 	}
+
+	logger.Log.Info("Signup request for email: " + input.Name)
 
 	// Check if user already exists
 	exists, err := database.DB.NewSelect().Model((*models.User)(nil)).
@@ -113,9 +123,10 @@ func RegisterUser(ctx context.Context, input dto.SignupInput) (*models.User, *er
 		return nil, errors.InternalError(err)
 	}
 
-	// Build verification URL
+	// Build verification URL — Auth routes are mounted under /api/v1/auth, so
+	// the full verify path is /api/v1/auth/verify
 	cfg := config.LoadConfig()
-	verifyURL := fmt.Sprintf("http://localhost:%s/auth/verify?token=%s", cfg.Port, token)
+	verifyURL := fmt.Sprintf("http://localhost:%s/api/v1/auth/verify?token=%s", cfg.Port, token)
 	html := VerifyMail(user.Name, verifyURL)
 	if err := SendEmail(user.Email, "Verify your email", html); err != nil {
 		logger.Log.Error("failed to send verification email", zap.Error(err))

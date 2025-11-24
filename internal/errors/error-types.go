@@ -1,9 +1,23 @@
 package errors
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 func ValidationError(message string) *AppError {
 	return New("Validation Error", message, http.StatusBadRequest, nil)
+}
+
+// ValidationErrors returns an AppError that contains multiple validation messages.
+func ValidationErrors(messages []string) *AppError {
+	return &AppError{
+		Title:    "Validation Error",
+		Message:  strings.Join(messages, "; "),
+		Messages: messages,
+		Status:   http.StatusBadRequest,
+		Err:      nil,
+	}
 }
 
 func DuplicateError(field string) *AppError {

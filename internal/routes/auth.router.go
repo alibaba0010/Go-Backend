@@ -5,11 +5,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func AuthRoutes() *mux.Router {
-	route := mux.NewRouter()
+// AuthRoutes registers auth-related handlers onto the provided subrouter.
+func AuthRoutes(route *mux.Router) {
 	route.HandleFunc("/signup", controllers.SignupHandler).Methods("POST")
 	route.HandleFunc("/verify", controllers.ActivateUserHandler).Methods("GET")
-	// route.HandleFunc("/signin", controllers.SigninHandler).Methods("POST")
-
-	return route
+	// parent.HandleFunc("/signin", controllers.SigninHandler).Methods("POST")
 }
