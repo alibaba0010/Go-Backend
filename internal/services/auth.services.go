@@ -33,7 +33,6 @@ func RegisterUser(ctx context.Context, input dto.SignupInput) (*models.User, *er
 	// Run validation and convert errors to friendly messages
 	if err := validate.Struct(input); err != nil {
 		if ves, ok := err.(validator.ValidationErrors); ok {
-			logger.Log.Info("validation errors during registration", zap.Error(err))
 			var messages []string
 			for _, fe := range ves {
 				var msg string
@@ -63,7 +62,6 @@ func RegisterUser(ctx context.Context, input dto.SignupInput) (*models.User, *er
 		return nil, errors.ValidationError(err.Error())
 	}
 
-	logger.Log.Info("Signup request for email: " + input.Name)
 
 	// Check if user already exists
 	exists, err := database.DB.NewSelect().Model((*models.User)(nil)).
@@ -76,8 +74,7 @@ func RegisterUser(ctx context.Context, input dto.SignupInput) (*models.User, *er
 		return nil, errors.DuplicateError("email")
 	}
 
-	// We don't hash the password here; it will be hashed with argon2id at activation.
-	// Store signup payload (including raw password) temporarily in Redis instead.
+	
 	user := &models.User{
 		Name:  input.Name,
 		Email: input.Email,
@@ -97,9 +94,13 @@ func RegisterUser(ctx context.Context, input dto.SignupInput) (*models.User, *er
 		return nil, errors.InternalError(err)
 	}
 
-	// Store the signup payload (including raw password) in Redis with TTL 15 minutes.
-	// NOTE: storing raw password temporarily is a security risk in production —
-	// consider hashing with argon2id before storing or encrypting the payload.
+	// Hash the raw password now and store the hashed password in Redis with TTL 15 minutes.
+	// This reduces the risk of exposing the raw password if Redis is compromised.
+	hashedPwd, err := hashPassword(input.Password)
+	if err != nil {
+		return nil, errors.InternalError(err)
+	}
+
 	payload := struct {
 		ID       string `json:"id"`
 		Name     string `json:"name"`
@@ -109,7 +110,7 @@ func RegisterUser(ctx context.Context, input dto.SignupInput) (*models.User, *er
 		ID:       user.ID,
 		Name:     user.Name,
 		Email:    user.Email,
-		Password: input.Password,
+		Password: hashedPwd,
 	}
 
 	b, err := json.Marshal(payload)
@@ -118,16 +119,17 @@ func RegisterUser(ctx context.Context, input dto.SignupInput) (*models.User, *er
 	}
 
 	key := "verify:" + token
+	// logger.Log.Info("Storing verification token in Redis", zap.String("key", key))  {"key": "verify:bfe76810a260110e09c53ba861b351b68b99bd22a371a1cba50be1406da024f2"}
 	ttl := 15 * time.Minute
 	if err := database.RedisClient.Set(ctx, key, b, ttl).Err(); err != nil {
-		return nil, errors.InternalError(err)
+		return nil, errors.InternalError(err)  // find a way to handle this error 
 	}
 
 	// Build verification URL — Auth routes are mounted under /api/v1/auth, so
-	// the full verify path is /api/v1/auth/verify
 	cfg := config.LoadConfig()
 	verifyURL := fmt.Sprintf("http://localhost:%s/api/v1/auth/verify?token=%s", cfg.Port, token)
-	html := VerifyMail(user.Name, verifyURL)
+	// logger.Log.Info("Generated verification URL", zap.String("url", verifyURL)) {"url": "http://localhost:3000/api/v1/auth/verify?token=bfe76810a260110e09c53ba861b351b68b99bd22a371a1cba50be1406da024f2"}
+	html := VerifyMailHTML(user.Name, verifyURL)
 	if err := SendEmail(user.Email, "Verify your email", html); err != nil {
 		logger.Log.Error("failed to send verification email", zap.Error(err))
 		// Attempt to delete token to avoid leaking
@@ -147,7 +149,7 @@ func ActivateUser(ctx context.Context, token string) (*models.User, *errors.AppE
 	if err != nil {
 		return nil, errors.InternalError(err)
 	}
-
+// log data
 	var payload struct {
 		ID       string `json:"id"`
 		Name     string `json:"name"`
@@ -159,17 +161,12 @@ func ActivateUser(ctx context.Context, token string) (*models.User, *errors.AppE
 		return nil, errors.InternalError(err)
 	}
 
-	// Hash password with argon2id
-	hashedPwd, err := hashPassword(payload.Password)
-	if err != nil {
-		return nil, errors.InternalError(err)
-	}
-
+	// The password stored in Redis is already hashed, so use it directly.
 	user := &models.User{
 		ID:       payload.ID,
 		Name:     payload.Name,
 		Email:    payload.Email,
-		Password: hashedPwd,
+		Password: payload.Password,
 	}
 
 	// Insert into DB

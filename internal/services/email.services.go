@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/wneessen/go-mail"
 	"go.uber.org/zap"
@@ -38,9 +39,12 @@ func SendEmail(to, subject, htmlBody string) error {
 
 	client, err := mail.NewClient(host,
 		mail.WithPort(port),
+		mail.WithSMTPAuth(mail.SMTPAuthPlain),
 		mail.WithUsername(user),
 		mail.WithPassword(password),
 		mail.WithTLSPolicy(mail.TLSMandatory),
+		mail.WithTLSPolicy(mail.TLSMandatory),
+		mail.WithTimeout(10*time.Second),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create mail client: %w", err)
@@ -62,16 +66,46 @@ func SendEmail(to, subject, htmlBody string) error {
 
 // BuildWelcomeHTML returns a simple welcome HTML body. You can expand this
 // to include verification links, tokens, etc.
-func VerifyMail(name, verifyURL string) string {
-	return fmt.Sprintf(`
-	<html>
-	<body style="background:#f9f9f9; padding:20px; font-family:Arial;">
-		<div style="max-width:500px; margin:auto; background:white; padding:20px; border-radius:8px;">
-			<h1 style="color:#4CAF50;">Welcome, %s!</h1>
-			<p style="font-size:16px; color:#333;">Thanks for signing up. We're excited to have you onboard.</p>
-			<a href="%s" style="display:inline-block; background:#4CAF50; color:white; padding:10px 20px; border-radius:5px; text-decoration:none;">Verify your email</a>
-		</div>
-	</body>
-	</html>
-	`, name, verifyURL)
+func VerifyMailHTML(name, verifyURL string) string {
+		return fmt.Sprintf(`
+		<!doctype html>
+		<html lang="en">
+		<head>
+			<meta charset="utf-8">
+			<meta name="viewport" content="width=device-width,initial-scale=1">
+			<title>Verify your email</title>
+			<style>
+				body { background:#f4f6f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; padding:0; }
+				.container { max-width:600px; margin:36px auto; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,0.06); }
+				.header { background:linear-gradient(90deg,#3b82f6,#06b6d4); padding:24px; color:#fff; text-align:center; }
+				.logo { font-weight:700; font-size:20px; }
+				.content { padding:28px; color:#333; }
+				h1 { margin:0 0 8px 0; font-size:22px; }
+				p { margin:8px 0 16px 0; line-height:1.5; }
+				.button { display:inline-block; background:#10b981; color:#fff; padding:12px 20px; border-radius:6px; text-decoration:none; font-weight:600; }
+				.muted { color:#667085; font-size:13px; }
+				.footer { background:#f8fafc; padding:16px 24px; text-align:center; font-size:13px; color:#94a3b8; }
+				@media (max-width:420px) { .container { margin:12px; } .content { padding:18px; } }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<div class="logo">Restaurant Management Platform</div>
+				</div>
+				<div class="content">
+					<h1>Welcome, %s 👋</h1>
+					<p class="muted">You're signing up to the <strong>Restaurant Management Platform</strong>. To finish creating your account and secure your restaurant data, please verify your email address by clicking the button below.</p>
+					<p style="font-weight:700; color:#dc2626;">Please verify your email within <strong>15 minutes</strong>; the verification link will expire after that.</p>
+					<p style="text-align:center; margin:24px 0;"><a class="button" href="%s">Verify your email</a></p>
+					<p class="muted">If the button doesn't work, copy and paste the following link into your browser:</p>
+					<p class="muted"><a href="%s">%s</a></p>
+					<hr style="border:none;border-top:1px solid #eef2f7;margin:20px 0;" />
+					<p class="muted">Need help? Reply to this email or contact our support team at <a href="mailto:support@example.com">support@example.com</a>.</p>
+				</div>
+				<div class="footer">© %d Restaurant Management Platform — Manage reservations, menus and staff with ease.</div>
+			</div>
+		</body>
+		</html>
+		`, name, verifyURL, verifyURL, verifyURL, time.Now().Year())
 }
