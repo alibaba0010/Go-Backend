@@ -103,6 +103,25 @@ const definitions = `
 			},
 			"required": ["title","data"]
 		},
+		"SigninResponse": {
+			"type": "object",
+			"properties": {
+				"title": { "type": "string" },
+				"data": {
+					"type": "object",
+					"properties": {
+						"id": { "type": "string", "format": "uuid" },
+						"name": { "type": "string" },
+						"email": { "type": "string", "format": "email" },
+						"role": { "type": "string" },
+						"access_token": { "type": "string" },
+						"refresh_token": { "type": "string" }
+					},
+					"required": ["id","name","email","role","access_token"]
+				}
+			},
+			"required": ["title","data"]
+		},
 		"UserInput": {
 			"type": "object",
 			"properties": {

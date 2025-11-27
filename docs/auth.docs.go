@@ -105,7 +105,7 @@ const authPaths = `
 				}
 			],
 			"responses": {
-				"200": {"description": "Authenticated", "schema": {"type": "object", "properties": {"token": {"type":"string"}}}},
+				"200": {"description": "Authenticated", "schema": {"$ref": "#/definitions/SigninResponse"}},
 				"400": {"description": "Validation error", "schema": {"$ref": "#/definitions/Error"}},
 				"401": {"description": "Unauthorized", "schema": {"$ref": "#/definitions/Error"}},
 				"500": {"description": "Internal server error", "schema": {"$ref": "#/definitions/Error"}}
